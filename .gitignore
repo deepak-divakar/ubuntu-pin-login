@@ -1,0 +1,21 @@
+# Compiled PAM module and object files
+src/pam/*.so
+src/pam/*.o
+
+# Test binaries
+src/pam/test_hash
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# Temporary files and backups
+*.bak
+*.bak.*

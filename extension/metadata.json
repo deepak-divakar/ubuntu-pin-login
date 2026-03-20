@@ -1,0 +1,8 @@
+{
+  "uuid": "gdm-pin-login@panda-dev.ubuntu",
+  "name": "GDM PIN Login",
+  "description": "PIN Login UI for GDM",
+  "shell-version": [ "45", "46", "47" ],
+  "session-modes": [ "user", "unlock-dialog", "gdm" ],
+  "url": ""
+}
