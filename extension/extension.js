@@ -52,6 +52,12 @@ class PinPromptWidget extends St.BoxLayout {
         this._defaultButtonWellOriginalVisible = this._defaultButtonWell?.visible ?? true;
         this._defaultButtonWellOriginalOpacity = this._defaultButtonWell?.opacity ?? 255;
 
+        this._pinDisplayStack = new St.Widget({
+            layout_manager: new Clutter.BinLayout(),
+            x_align: Clutter.ActorAlign.CENTER,
+            y_align: Clutter.ActorAlign.CENTER,
+        });
+
         this._spinnerBin = new St.Bin({
             style_class: 'pin-spinner-bin',
             x_align: Clutter.ActorAlign.CENTER,
@@ -62,14 +68,15 @@ class PinPromptWidget extends St.BoxLayout {
         });
         this._spinnerBin.set_child(this._spinner);
         this._spinner.stop();
-        this._spinnerBin.hide();
-        this.add_child(this._spinnerBin);
+        this._spinnerBin.opacity = 0;
+        this._spinnerBin.translation_y = -24;
 
         this._dotsBox = new St.BoxLayout({
             style_class: 'pin-dots-box',
             x_align: Clutter.ActorAlign.CENTER,
             y_align: Clutter.ActorAlign.CENTER,
         });
+        this._dotsBox.translation_y = 12;
 
         this._dots = [];
         for (let i = 0; i < PIN_LENGTH; i++) {
@@ -77,7 +84,9 @@ class PinPromptWidget extends St.BoxLayout {
             this._dots.push(dot);
             this._dotsBox.add_child(dot);
         }
-        this.add_child(this._dotsBox);
+        this._pinDisplayStack.add_child(this._dotsBox);
+        this._pinDisplayStack.add_child(this._spinnerBin);
+        this.add_child(this._pinDisplayStack);
 
         this._usePasswordButton = new St.Button({
             label: 'Use Password Instead',
@@ -201,7 +210,7 @@ class PinPromptWidget extends St.BoxLayout {
         this._nativePasswordFallbackActive = false;
         this._pinModeActive = false;
         this.show();
-        this._spinnerBin.hide();
+        this._spinnerBin.opacity = 0;
         this._dotsBox.hide();
         this._usePasswordButton.hide();
         this._backButton.visible = this._shouldShowBackButton();
@@ -221,14 +230,15 @@ class PinPromptWidget extends St.BoxLayout {
         if (!entry)
             return;
 
+        const showBackButton = this._shouldShowBackButton();
         this._nativePasswordFallbackActive = true;
         this._pinModeActive = false;
         this.show();
-        this._spinnerBin.hide();
+        this._spinnerBin.opacity = 0;
         this._dotsBox.hide();
         this._usePasswordButton.hide();
-        this._usePinButton.hide();
-        this._backButton.visible = this._shouldShowBackButton();
+        this._usePinButton.visible = !showBackButton;
+        this._backButton.visible = showBackButton;
 
         entry.opacity = 255;
         entry.x_expand = this._entryOriginalXExpand;
@@ -310,7 +320,15 @@ class PinPromptWidget extends St.BoxLayout {
             return;
 
         const hintText = entry.hint_text ?? '';
-        if (!hintText || hintText === this._lastHintText)
+        if (!hintText)
+            return;
+
+        // On the native password fallback screen, ignore transient PIN prompts
+        // until the user explicitly switches back or the auth prompt fully resets.
+        if (this._nativePasswordFallbackActive && hintText === 'PIN')
+            return;
+
+        if (hintText === this._lastHintText)
             return;
 
         this._lastHintText = hintText;
@@ -411,7 +429,7 @@ class PinPromptWidget extends St.BoxLayout {
         if (this._pinSubmitted &&
             DEFAULT_SPINNER_STATUSES.has(this._authPrompt.verificationStatus)) {
             try {
-                this._spinnerBin.show();
+                this._spinnerBin.opacity = 255;
                 this._spinner.play();
             } catch (_error) {
             }
@@ -422,7 +440,7 @@ class PinPromptWidget extends St.BoxLayout {
             this._spinner.stop();
         } catch (_error) {
         }
-        this._spinnerBin.hide();
+        this._spinnerBin.opacity = 0;
 
         if (!DEFAULT_SPINNER_STATUSES.has(this._authPrompt.verificationStatus))
             this._pinSubmitted = false;
@@ -449,8 +467,7 @@ class PinPromptWidget extends St.BoxLayout {
         if (!entry)
             return;
 
-        if (this._shouldShowBackButton())
-            this._showNativePasswordFallback();
+        this._showNativePasswordFallback();
 
         entry.set_text('');
         entry.clutter_text.emit('activate');

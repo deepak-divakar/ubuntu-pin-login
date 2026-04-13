@@ -6,12 +6,12 @@
 
 .pin-spinner-bin {
     min-height: 24px;
-    margin-bottom: 2px;
+    min-width: 24px;
 }
 
 .pin-dots-box {
     spacing: 24px;
-    margin-bottom: 8px;
+    margin-bottom: 14px;
 }
 
 .pin-dot {
