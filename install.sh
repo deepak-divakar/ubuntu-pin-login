@@ -19,6 +19,84 @@ info()  { echo -e "${GREEN}[✓]${NC} $1"; }
 warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
 error() { echo -e "${RED}[✗]${NC} $1"; }
 
+get_home_dir() {
+    getent passwd "$1" | cut -d: -f6
+}
+
+run_gsettings_for_user() {
+    local target_user="$1"
+    shift
+
+    local target_home
+    target_home="$(get_home_dir "$target_user")"
+
+    if [ -z "$target_home" ]; then
+        return 1
+    fi
+
+    runuser -u "$target_user" -- env HOME="$target_home" XDG_CONFIG_HOME="$target_home/.config" dbus-run-session gsettings "$@"
+}
+
+update_enabled_extensions_list() {
+    local action="$1"
+
+    python3 - "$action" "$EXTENSION_UUID" <<'PY'
+import ast
+import sys
+
+action = sys.argv[1]
+uuid = sys.argv[2]
+raw = sys.stdin.read().strip() or '@as []'
+
+if raw.startswith('@as '):
+    raw = raw[4:]
+
+try:
+    extensions = ast.literal_eval(raw)
+except Exception:
+    extensions = []
+
+if not isinstance(extensions, list):
+    extensions = []
+
+if action == 'add':
+    if uuid not in extensions:
+        extensions.append(uuid)
+elif action == 'remove':
+    extensions = [extension for extension in extensions if extension != uuid]
+
+print(repr(extensions))
+PY
+}
+
+enable_extension_for_account() {
+    local target_user="$1"
+    local label="$2"
+
+    if ! id "$target_user" &>/dev/null; then
+        warn "$label account '$target_user' not found; skipping extension enable"
+        return 0
+    fi
+
+    local current_extensions
+    if ! current_extensions="$(run_gsettings_for_user "$target_user" get org.gnome.shell enabled-extensions 2>/dev/null)"; then
+        warn "Could not read enabled extensions for $label; skipping"
+        return 0
+    fi
+
+    local updated_extensions
+    updated_extensions="$(printf '%s' "$current_extensions" | update_enabled_extensions_list add)"
+
+    if run_gsettings_for_user "$target_user" set org.gnome.shell enabled-extensions "$updated_extensions" 2>/dev/null; then
+        if [ "$target_user" = "gdm" ]; then
+            run_gsettings_for_user "$target_user" set org.gnome.shell disable-user-extensions false 2>/dev/null || true
+        fi
+        info "Extension enabled for $label"
+    else
+        warn "Could not enable extension for $label automatically"
+    fi
+}
+
 # ---- Root check ----
 if [ "$EUID" -ne 0 ]; then
     error "Please run as root: sudo ./install.sh"
@@ -106,9 +184,9 @@ cp "$SCRIPT_DIR/extension/stylesheet.css" "$USER_EXT_DIR/"
 chown -R "$REAL_USER:$REAL_USER" "$USER_EXT_DIR"
 info "User extension installed to $USER_EXT_DIR"
 
-# Enable the extension for the user
-su - "$REAL_USER" -c "gnome-extensions enable ${EXTENSION_UUID}" 2>/dev/null || true
-info "Extension enabled for $REAL_USER"
+# Enable the extension for the user and the GDM login screen
+enable_extension_for_account "$REAL_USER" "$REAL_USER"
+enable_extension_for_account "gdm" "the GDM login screen"
 
 # ---- 3. Install PIN Settings App ----
 echo ""
@@ -178,8 +256,8 @@ echo "════════════════════════�
 echo ""
 echo "Next steps:"
 echo "  1. Open 'PIN Login Settings' from your app launcher to set your PIN"
-echo "  2. Log out and log back in to activate the extension"
-echo "  3. Lock your screen (Super+L) to test the PIN input"
+echo "  2. Log out and log back in to activate the extension in both user and GDM sessions"
+echo "  3. Test both the login screen and the lock screen PIN input"
 echo ""
 echo "To uninstall, run: sudo ./uninstall.sh"
 echo ""

@@ -1,12 +1,16 @@
 .pin-widget-container {
     spacing: 16px;
     margin-top: 10px;
+    margin-bottom: 8px;
+}
+
+.pin-spinner-bin {
+    min-height: 28px;
 }
 
 .pin-dots-box {
     spacing: 24px;
-    margin-bottom: 20px;
-    margin-top: 10px;
+    margin-bottom: 8px;
 }
 
 .pin-dot {
@@ -22,40 +26,8 @@
     border-color: white;
 }
 
-.numpad-container {
-    row-spacing: 12px;
-    column-spacing: 12px;
-}
-
-.numpad-button {
-    font-size: 20pt;
-    font-weight: bold;
-    color: white;
-    background-color: rgba(255, 255, 255, 0.15);
-    border-radius: 999px;
-    width: 64px;
-    height: 64px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    text-align: center;
-}
-
-.numpad-button:hover, .numpad-button:focus {
-    background-color: rgba(255, 255, 255, 0.3);
-}
-
-.numpad-button:active {
-    background-color: rgba(255, 255, 255, 0.5);
-}
-
-.numpad-action-button {
-    background-color: rgba(255, 50, 50, 0.2);
-}
-.numpad-action-button:hover, .numpad-action-button:focus {
-    background-color: rgba(255, 50, 50, 0.4);
-}
-
 .use-password-button {
-    margin-top: 16px;
+    margin-top: 8px;
     padding: 8px 16px;
     border-radius: 20px;
     color: rgba(255, 255, 255, 0.7);
@@ -66,4 +38,9 @@
 .use-password-button:hover, .use-password-button:focus {
     color: white;
     background-color: rgba(255, 255, 255, 0.1);
+}
+
+.pin-back-button {
+    margin-top: 0;
+    color: rgba(255, 255, 255, 0.55);
 }
