@@ -1,11 +1,12 @@
 .pin-widget-container {
-    spacing: 16px;
-    margin-top: 10px;
+    spacing: 8px;
+    margin-top: 0;
     margin-bottom: 8px;
 }
 
 .pin-spinner-bin {
-    min-height: 28px;
+    min-height: 24px;
+    margin-bottom: 2px;
 }
 
 .pin-dots-box {

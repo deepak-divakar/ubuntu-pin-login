@@ -10,7 +10,6 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 const PIN_LENGTH = 4;
 const PIN_SPINNER_SIZE = 24;
-const PIN_SPINNER_STATUS = AuthPrompt.AuthPromptStatus.VERIFICATION_IN_PROGRESS;
 const DEFAULT_SPINNER_STATUSES = new Set([
     AuthPrompt.AuthPromptStatus.VERIFYING,
     AuthPrompt.AuthPromptStatus.VERIFICATION_IN_PROGRESS,
@@ -63,6 +62,7 @@ class PinPromptWidget extends St.BoxLayout {
         });
         this._spinnerBin.set_child(this._spinner);
         this._spinner.stop();
+        this._spinnerBin.hide();
         this.add_child(this._spinnerBin);
 
         this._dotsBox = new St.BoxLayout({
@@ -179,7 +179,6 @@ class PinPromptWidget extends St.BoxLayout {
         this._nativePasswordFallbackActive = false;
         this._pinModeActive = true;
         this.show();
-        this._spinnerBin.show();
         this._dotsBox.show();
         this._usePasswordButton.show();
         this._usePinButton.hide();
@@ -410,8 +409,9 @@ class PinPromptWidget extends St.BoxLayout {
             return;
 
         if (this._pinSubmitted &&
-            this._authPrompt.verificationStatus === PIN_SPINNER_STATUS) {
+            DEFAULT_SPINNER_STATUSES.has(this._authPrompt.verificationStatus)) {
             try {
+                this._spinnerBin.show();
                 this._spinner.play();
             } catch (_error) {
             }
@@ -422,8 +422,9 @@ class PinPromptWidget extends St.BoxLayout {
             this._spinner.stop();
         } catch (_error) {
         }
+        this._spinnerBin.hide();
 
-        if (this._authPrompt.verificationStatus !== PIN_SPINNER_STATUS)
+        if (!DEFAULT_SPINNER_STATUSES.has(this._authPrompt.verificationStatus))
             this._pinSubmitted = false;
     }
 
